@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package schemas.v1;
+
+option go_package = "connect-test/generated/schemas/v1;chat";
+
+message ChatRequest {
+    string id = 1;
+    string text = 2;
+}
+message ChatResponse {
+    string id = 1;
+    string user = 2;
+    string text = 3;
+}
+
+service ChatService {
+    rpc send (ChatRequest) returns (ChatResponse);
+    rpc read (ChatRequest) returns (stream ChatResponse);
+}
