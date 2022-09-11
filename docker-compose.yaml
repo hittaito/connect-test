@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  mq:
+    container_name: mq
+    image: rabbitmq:3.10.7-management-alpine
+    ports:
+      - 1883:1883
+      - 5672:5672
+      - 15672:15672

@@ -31,7 +31,7 @@ func newCORS() *cors.Cors {
 		},
 		AllowOriginFunc: func(origin string) bool {
 			// Allow all origins, which effectively disables CORS.
-			return true
+			return origin == "http://localhost:3000"
 		},
 		AllowedHeaders: []string{"*"},
 		ExposedHeaders: []string{
@@ -55,7 +55,10 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	service := chat.NewSevice()
+	service, err := chat.NewSevice()
+	if err != nil {
+		panic(err)
+	}
 
 	mux := http.NewServeMux()
 	path, handler := chatconnect.NewChatServiceHandler(service)

@@ -9,4 +9,8 @@ require (
 	google.golang.org/protobuf v1.28.1
 )
 
-require golang.org/x/text v0.3.7 // indirect
+require (
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/rabbitmq/amqp091-go v1.5.0 // indirect
+	golang.org/x/text v0.3.7 // indirect
+)

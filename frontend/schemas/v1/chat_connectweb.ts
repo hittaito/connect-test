@@ -3,7 +3,7 @@
 /* eslint-disable */
 /* @ts-nocheck */
 
-import {ChatRequest, ChatResponse} from "./chat_pb.js";
+import {ChartHistory, ChatRequest, ChatResponse, ChatSended, ChatStart} from "./chat_pb.js";
 import {MethodKind} from "@bufbuild/protobuf";
 
 /**
@@ -13,12 +13,21 @@ export const ChatService = {
   typeName: "schemas.v1.ChatService",
   methods: {
     /**
+     * @generated from rpc schemas.v1.ChatService.fetch
+     */
+    fetch: {
+      name: "fetch",
+      I: ChatStart,
+      O: ChartHistory,
+      kind: MethodKind.Unary,
+    },
+    /**
      * @generated from rpc schemas.v1.ChatService.send
      */
     send: {
       name: "send",
       I: ChatRequest,
-      O: ChatResponse,
+      O: ChatSended,
       kind: MethodKind.Unary,
     },
     /**
@@ -26,9 +35,18 @@ export const ChatService = {
      */
     read: {
       name: "read",
-      I: ChatRequest,
+      I: ChatStart,
       O: ChatResponse,
       kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * @generated from rpc schemas.v1.ChatService.stop
+     */
+    stop: {
+      name: "stop",
+      I: ChatStart,
+      O: ChatSended,
+      kind: MethodKind.Unary,
     },
   }
 } as const;
