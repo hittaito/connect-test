@@ -21,7 +21,6 @@ func (s *myMessageService) Fetch(ctx context.Context, req *connect.Request[msg.C
 	return nil, nil
 }
 func (s *myMessageService) Send(ctx context.Context, req *connect.Request[msg.ChatRequest]) (*connect.Response[msg.ChatSended], error) {
-	fmt.Printf("L29 %v\n", req.Msg)
 	err := s.mq.Send(ctx, mq.Message{
 		ChatId:    uuid.NewString(),
 		UserName:  req.Msg.UserName,

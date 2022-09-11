@@ -14,3 +14,8 @@ go run ./server.go
 cd frontend
 npm run dev
 ```
+
+## todo
+
+disconnect action
+authorization
