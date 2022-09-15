@@ -7,21 +7,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	connect "github.com/bufbuild/connect-go"
 	"github.com/google/uuid"
 )
 
 type myMessageService struct {
-	mq         mq.RabbitMq
-	stopSignal chan string
+	ch mq.Channnel
 }
 
 func (s *myMessageService) Fetch(ctx context.Context, req *connect.Request[msg.ChatStart]) (*connect.Response[msg.ChartHistory], error) {
 	return nil, nil
 }
 func (s *myMessageService) Send(ctx context.Context, req *connect.Request[msg.ChatRequest]) (*connect.Response[msg.ChatSended], error) {
-	err := s.mq.Send(ctx, mq.Message{
+	err := mq.Send(ctx, s.ch, mq.Message{
 		ChatId:    uuid.NewString(),
 		UserName:  req.Msg.UserName,
 		Text:      req.Msg.Text,
@@ -37,13 +37,25 @@ func (s *myMessageService) Send(ctx context.Context, req *connect.Request[msg.Ch
 }
 
 func (s *myMessageService) Read(ctx context.Context, req *connect.Request[msg.ChatStart], stream *connect.ServerStream[msg.ChatResponse]) error {
-	msgs, err := s.mq.Receive(ctx)
+	err := mq.Send(ctx, s.ch, mq.Message{
+		ChatId:    uuid.NewString(),
+		UserName:  "master",
+		Text:      fmt.Sprintf("Join %s", req.Msg.UserName),
+		GroupName: req.Msg.GroupName,
+	})
 	if err != nil {
 		return err
 	}
 
-	quit := make(chan string)
+	msgs, err := mq.Receive(ctx, s.ch)
+	if err != nil {
+		return err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
 			select {
 			case dd := <-msgs:
@@ -51,7 +63,7 @@ func (s *myMessageService) Read(ctx context.Context, req *connect.Request[msg.Ch
 				err := json.Unmarshal(dd.Body, &resp)
 				if err != nil {
 					fmt.Println(err)
-					quit <- "stop"
+					return
 				}
 
 				err = stream.Send(&msg.ChatResponse{
@@ -61,31 +73,30 @@ func (s *myMessageService) Read(ctx context.Context, req *connect.Request[msg.Ch
 				})
 				if err != nil {
 					fmt.Println(err)
-					quit <- "stop"
-				}
-			case name := <-s.stopSignal:
-				if name == req.Msg.UserName {
-					quit <- "stop"
 					return
 				}
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
-	<-quit
-	return nil
+	wg.Wait()
+	err = mq.Send(ctx, s.ch, mq.Message{
+		ChatId:    uuid.NewString(),
+		UserName:  "master",
+		Text:      fmt.Sprintf("Leave %s", req.Msg.UserName),
+		GroupName: req.Msg.GroupName,
+	})
+
+	return err
 }
 func (s *myMessageService) Stop(ctx context.Context, req *connect.Request[msg.ChatStart]) (*connect.Response[msg.ChatSended], error) {
-	s.stopSignal <- req.Msg.UserName
+
 	return nil, nil
 }
-func NewSevice() (chatconnect.ChatServiceHandler, error) {
-	m, err := mq.New()
-	if err != nil {
-		return nil, err
-	}
-	sig := make(chan string)
+func NewSevice(ch mq.Channnel) (chatconnect.ChatServiceHandler, error) {
+
 	return &myMessageService{
-		mq:         m,
-		stopSignal: sig,
+		ch: ch,
 	}, nil
 }

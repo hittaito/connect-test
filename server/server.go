@@ -12,6 +12,8 @@ import (
 	"connect-test/chat"
 	"connect-test/generated/schemas/v1/chatconnect"
 
+	amqp "github.com/rabbitmq/amqp091-go"
+
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -55,7 +57,20 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	service, err := chat.NewSevice()
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer conn.Close()
+	ch, err := conn.Channel()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer ch.Close()
+
+	service, err := chat.NewSevice(ch)
 	if err != nil {
 		panic(err)
 	}
